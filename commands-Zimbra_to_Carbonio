@@ -1,0 +1,26 @@
+
+
+✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷
+ZIMBRA SERVER
+✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷
+------------------------------------------------
+EXPORTAR DOMINIOS, DATA DE USUARIOS Y LISTA DE DISTRIBUCION
+-------------------------------------------------
+mkdir -p /opt/backups/zmigrate && chown zimbra.zimbra /opt/backups/zmigrate -R && cd /opt/backups/zmigrate && su - zimbra -c "zmprov gad > /opt/backups/zmigrate/domains.txt && zmprov -l gaa > /opt/backups/zmigrate/emails.txt && zmprov gadl > /opt/backups/zmigrate/distributionlist.txt && mkdir -p /opt/backups/zmigrate/distributionlist_members && for i in \$(cat /opt/backups/zmigrate/distributionlist.txt); do zmprov gdlm \$i > /opt/backups/zmigrate/distributionlist_members/\$i.txt; echo \$i; done && mkdir -p /opt/backups/zmigrate/userpass && for i in \$(cat /opt/backups/zmigrate/emails.txt); do zmprov -l ga \$i userPassword | grep userPassword: | awk '{print \$2}' > /opt/backups/zmigrate/userpass/\$i.shadow; done && mkdir -p /opt/backups/zmigrate/userdata && for i in \$(cat /opt/backups/zmigrate/emails.txt); do zmprov ga \$i | grep -i Name: > /opt/backups/zmigrate/userdata/\$i.txt; done"
+
+
+
+✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷
+CARBONIO SERVER 
+✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷
+------------------------------------------------
+RESTAURACION DE DOMINIOS Y DATA DE USUARIOS
+------------------------------------------------
+
+ssh root@10.90.90.200 "mkdir -p /opt/backups/zmigrate/" && rsync -avz /opt/backups/zmigrate/ root@10.90.90.200:/opt/backups/zmigrate/ && su - zextras -c 'for i in $(cat /opt/backups/zmigrate/domains.txt); do carbonio prov cd $i zimbraAuthMech zimbra; echo $i; done' && USERPASS="/opt/backups/zmigrate/userpass"; USERDATA="/opt/backups/zmigrate/userdata"; USERS="/opt/backups/zmigrate/emails.txt"; for i in $(cat $USERS); do givenName=$(grep givenName: $USERDATA/$i.txt | cut -d ":" -f2); displayName=$(grep displayName: $USERDATA/$i.txt | cut -d ":" -f2); shadowpass=$(cat $USERPASS/$i.shadow); tmpPass="CHANGEme"; su - zextras -c "carbonio prov ca $i \"$tmpPass\" cn \"$givenName\" displayName \"$displayName\" givenName \"$givenName\" && carbonio prov ma $i userPassword \"$shadowpass\""; done
+
+
+------------------------------------------------
+RESTAURACION DE MAILBOX (TRABAJANDO - NO ES FUNCIONAL AUN)
+------------------------------------------------
+su - zimbra -c 'FORMAT=tgz; ZBACKUP=/opt/backups/zmigrate; DATE=$(date +"%d%m%y"); ZDUMPDIR=$ZBACKUP/$DATE; ZMBOX=/opt/zimbra/bin/zmmailbox; ssh root@10.90.90.200 "mkdir -p $ZDUMPDIR"; mkdir -p $ZDUMPDIR && for account in $(zmprov -l gaa | sort); do echo "Processing mailbox $account backup..."; $ZMBOX -z -m $account getRestURL "//?fmt=${FORMAT}$query" > $ZDUMPDIR/$account.${FORMAT}; rsync -avz $ZDUMPDIR/$account.${FORMAT} root@10.90.90.200:$ZDUMPDIR; done && echo "Zimbra Mailbox backup has been completed successfully." && echo "El script finalizó a las:" && date'
