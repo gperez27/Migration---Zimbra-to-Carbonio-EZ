@@ -15,6 +15,13 @@ SINCRONIZA LAS CARPETAS DE BACKUPS ZMIGRATE
 ssh root@10.90.90.200 "mkdir -p /opt/backups/zmigrate/" && rsync -avz /opt/backups/zmigrate/ root@10.90.90.200:/opt/backups/zmigrate/
 
 
+------------------------------------------------------------------
+CREANDO LOS BUZONES EN EL SERVER CARBONIO
+------------------------------------------------------------------
+FUNCIONAL EN EL OTRO SERVER - TODOS LOS USUARIOS
+clear; FORMAT=tgz; ZBACKUP=/opt/backups/zmigrate/MBOX; REMOTE_SERVER=root@10.90.90.200; REMOTE_DIR=/opt/backups/zmigrate/MBOX; ZMBOX=/opt/zimbra/bin/zmmailbox; ssh $REMOTE_SERVER "[ ! -d $REMOTE_DIR ] && mkdir -p $REMOTE_DIR"; for account in $(su - zimbra -c 'zmprov -l gaa | sort'); do echo "Processing mailbox $account backup..."; $ZMBOX -z -m $account getRestURL "//?fmt=${FORMAT}" | ssh $REMOTE_SERVER "cat > $REMOTE_DIR/$account.${FORMAT}"; if [ $? -eq 0 ]; then echo "El respaldo para $account se completó exitosamente."; else echo "Error durante el respaldo para $account. Revise los registros."; fi; done; echo "Zimbra Mailbox backup has been completed successfully."; echo "El script finalizó a las:"; date
+
+
 
 ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷ ✷
 CARBONIO SERVER 
@@ -23,6 +30,13 @@ CARBONIO SERVER
 RESTAURACION DE DOMINIOS Y DATA DE USUARIOS
 ------------------------------------------------
  su - zextras -c 'for i in $(cat /opt/backups/zmigrate/domains.txt); do carbonio prov cd $i zimbraAuthMech zimbra; echo $i; done' && USERPASS="/opt/backups/zmigrate/userpass"; USERDATA="/opt/backups/zmigrate/userdata"; USERS="/opt/backups/zmigrate/emails.txt"; for i in $(cat $USERS); do givenName=$(grep givenName: $USERDATA/$i.txt | cut -d ":" -f2); displayName=$(grep displayName: $USERDATA/$i.txt | cut -d ":" -f2); shadowpass=$(cat $USERPASS/$i.shadow); tmpPass="CHANGEme"; su - zextras -c "carbonio prov ca $i \"$tmpPass\" cn \"$givenName\" displayName \"$displayName\" givenName \"$givenName\" && carbonio prov ma $i userPassword \"$shadowpass\""; done
+
+
+
+
+
+
+
 
 
 ------------------------------------------------
