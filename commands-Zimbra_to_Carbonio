@@ -32,9 +32,10 @@ RESTAURACION DE DOMINIOS Y DATA DE USUARIOS
  su - zextras -c 'for i in $(cat /opt/backups/zmigrate/domains.txt); do carbonio prov cd $i zimbraAuthMech zimbra; echo $i; done' && USERPASS="/opt/backups/zmigrate/userpass"; USERDATA="/opt/backups/zmigrate/userdata"; USERS="/opt/backups/zmigrate/emails.txt"; for i in $(cat $USERS); do givenName=$(grep givenName: $USERDATA/$i.txt | cut -d ":" -f2); displayName=$(grep displayName: $USERDATA/$i.txt | cut -d ":" -f2); shadowpass=$(cat $USERPASS/$i.shadow); tmpPass="CHANGEme"; su - zextras -c "carbonio prov ca $i \"$tmpPass\" cn \"$givenName\" displayName \"$displayName\" givenName \"$givenName\" && carbonio prov ma $i userPassword \"$shadowpass\""; done
 
 
-
-
-
+------------------------------------------------
+RESTAURACION DE MAILBOX EN CARBONIO (ANTES BRINDAR LOS PERMISOS NECESARIOS A LA CARPETA)
+------------------------------------------------
+for i in `cat /opt/backups/zmigrate/emails.txt`; do zmmailbox -z -m $i -t 0 postRestURL "/?fmt=tgz&resolve=skip" /opt/backups/zmigrate/MBOX/$i.tgz ; echo "$i -- finished "; done
 
 
 
