@@ -35,12 +35,23 @@ RESTAURACION DE DOMINIOS Y DATA DE USUARIOS
 ------------------------------------------------
 RESTAURACION DE MAILBOX EN CARBONIO (ANTES BRINDAR LOS PERMISOS NECESARIOS A LA CARPETA)
 ------------------------------------------------
-for i in `cat /opt/backups/zmigrate/emails.txt`; do zmmailbox -z -m $i -t 0 postRestURL "/?fmt=tgz&resolve=skip" /opt/backups/zmigrate/MBOX/$i.tgz ; echo "$i -- finished "; done
+su - zextras -c "zmlocalconfig -e zimbra_mail_service_port=8080" 
+su - zextras -c "zmprov mcf zimbraPublicServiceHostname SUSTITUIRPORFQDN" 
+su - zextras -c "zmprov mcf zimbraPublicServiceProtocol https" 
+su - zextras -c "zmprov ms `zmhostname` zimbraPublicServiceHostname SUSTITUIRPORFQDN" "
+su - zextras -c "zmprov ms `zmhostname` zimbraPublicServiceProtocol https"
+su - zextras -c "zmlocalconfig -e socket_so_timeout=3000000"
+su - zextras -c "zmlocalconfig -reload"
+firewall-cmd --zone=public --add-port=25/tcp --permanent
+firewall-cmd --zone=public --add-port=110/tcp --permanent
+firewall-cmd --zone=public --add-port=143/tcp --permanent
+firewall-cmd --zone=public --add-port=587/tcp --permanent
+firewall-cmd --zone=public --add-port=993/tcp --permanent
+firewall-cmd --zone=public --add-port=80/tcp --permanent
+firewall-cmd --zone=public --add-port=443/tcp --permanent
+firewall-cmd --reload
 
 
 
 
-------------------------------------------------
-RESTAURACION DE MAILBOX (TRABAJANDO - NO ES FUNCIONAL AUN)
-------------------------------------------------
 su - zimbra -c 'FORMAT=tgz; ZBACKUP=/opt/backups/zmigrate; DATE=$(date +"%d%m%y"); ZDUMPDIR=$ZBACKUP/$DATE; ZMBOX=/opt/zimbra/bin/zmmailbox; ssh root@10.90.90.200 "mkdir -p $ZDUMPDIR"; mkdir -p $ZDUMPDIR && for account in $(zmprov -l gaa | sort); do echo "Processing mailbox $account backup..."; $ZMBOX -z -m $account getRestURL "//?fmt=${FORMAT}$query" > $ZDUMPDIR/$account.${FORMAT}; rsync -avz $ZDUMPDIR/$account.${FORMAT} root@10.90.90.200:$ZDUMPDIR; done && echo "Zimbra Mailbox backup has been completed successfully." && echo "El script finalizó a las:" && date'
