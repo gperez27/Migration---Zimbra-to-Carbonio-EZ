@@ -33,6 +33,13 @@ RESTAURACION DE DOMINIOS Y DATA DE USUARIOS
 
 
 ------------------------------------------------
+RESTAURACION DE UN USUARIO
+------------------------------------------------
+clear && ls /opt/backups/zmigrate/MBOX/ && read -p "Ingrese el correo de la cuenta de Carbonio a restaurar: " username && [ -z "$username" ] && echo "Error: Ingrese un nombre de cuenta de Carbonio válido." && exit 1 || BACKUPDIR="/opt/backups/zmigrate/MBOX/$username" && echo "Restaurando buzón para $username..." && su - zextras -c "carbonio-mbox-import -a $username -i $BACKUPDIR/$username.tgz --resolve skip" && [ $? -eq 0 ] && echo "El buzón para $username se restauró exitosamente." || echo "Error al restaurar el buzón para $username. Revise los registros." && echo "Proceso de restauración del buzón completado."
+
+
+
+------------------------------------------------
 RESTAURACION DE MAILBOX EN CARBONIO (ANTES BRINDAR LOS PERMISOS NECESARIOS A LA CARPETA)
 ------------------------------------------------
 su - zextras -c "zmlocalconfig -e zimbra_mail_service_port=8080" 
